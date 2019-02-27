@@ -52,6 +52,7 @@
             this.textBoxPath.Name = "textBoxPath";
             this.textBoxPath.Size = new System.Drawing.Size(454, 20);
             this.textBoxPath.TabIndex = 1;
+            this.textBoxPath.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxPath_KeyDown);
             // 
             // label1
             // 

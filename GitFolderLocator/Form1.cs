@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -26,9 +27,10 @@ namespace GitFolderLocator
         private void DoWork()
         {
             UpdateWorkStatusLog($"Started!");
-            outpuFile.WriteLine($"DirectoryPath");
+            outpuFile.WriteLine($"Project,DirectoryPath,SourceURL");
             outpuFile.Flush();
-
+            Regex regex_url = new Regex(@"url(.*)");
+            
             var directories = Directory.GetDirectories(rootDirectory);
             using (outpuFile)
             {
@@ -37,9 +39,29 @@ namespace GitFolderLocator
                     var directoyList = Directory.EnumerateDirectories(dir, ".git", SearchOption.AllDirectories);
 
                     foreach (var item in directoyList)
-                    {
+                    {                        
+                        string sourceURL = string.Empty;
+                        using (StreamReader sr= new StreamReader($"{item}\\config"))
+                        {
+                            while (!sr.EndOfStream)
+                            {
+                                var text = sr.ReadLine();
+                                if (regex_url.IsMatch(text))
+                                {
+                                    sourceURL = text.Substring(6);
+                                    continue;
+                                }
+                            }
+                        }
+
                         UpdateWorkStatusLog($"Processing: {item}");
-                        outpuFile.WriteLine($"\"{item}\"");
+                        outpuFile.WriteLine($"\"{Path.GetFileName(dir)}\",\"{item}\",\"{sourceURL}\"");
+                        outpuFile.Flush();
+                    }
+
+                    if (directoyList.Count() == 0)
+                    {
+                        outpuFile.WriteLine($"\"{Path.GetFileName(dir)}\",\"{string.Empty}\",\"{string.Empty}\"");
                         outpuFile.Flush();
                     }
                 }
@@ -67,6 +89,14 @@ namespace GitFolderLocator
             buttonStart.Enabled = false;
             Thread t = new Thread(DoWork);
             t.Start();
+        }
+
+        private void textBoxPath_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                button1_Click(sender, new EventArgs());
+            }
         }
 
         private void UpdateWorkStatusLog(string text)
