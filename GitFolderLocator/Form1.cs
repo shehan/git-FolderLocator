@@ -27,10 +27,11 @@ namespace GitFolderLocator
         private void DoWork()
         {
             UpdateWorkStatusLog($"Started!");
-            outpuFile.WriteLine($"Project,DirectoryPath,SourceURL");
+            outpuFile.WriteLine($"Project,DirectoryPath,SourceURL,DefaultBranch");
             outpuFile.Flush();
             Regex regex_url = new Regex(@"url(.*)");
-            
+            Regex regex_branch = new Regex(@"\[branch(.*)");
+
             var directories = Directory.GetDirectories(rootDirectory);
             using (outpuFile)
             {
@@ -41,6 +42,7 @@ namespace GitFolderLocator
                     foreach (var item in directoyList)
                     {                        
                         string sourceURL = string.Empty;
+                        string branch = string.Empty;
                         using (StreamReader sr= new StreamReader($"{item}\\config"))
                         {
                             while (!sr.EndOfStream)
@@ -51,17 +53,24 @@ namespace GitFolderLocator
                                     sourceURL = text.Substring(6);
                                     continue;
                                 }
+
+                                if (regex_branch.IsMatch(text))
+                                {
+                                    branch = text.Substring(9);
+                                    branch = branch.Substring(0, branch.Length - 2);
+                                    continue;
+                                }
                             }
                         }
 
                         UpdateWorkStatusLog($"Processing: {item}");
-                        outpuFile.WriteLine($"\"{Path.GetFileName(dir)}\",\"{item}\",\"{sourceURL}\"");
+                        outpuFile.WriteLine($"\"{Path.GetFileName(dir)}\",\"{item}\",\"{sourceURL}\",\"{branch}\"");
                         outpuFile.Flush();
                     }
 
                     if (directoyList.Count() == 0)
                     {
-                        outpuFile.WriteLine($"\"{Path.GetFileName(dir)}\",\"{string.Empty}\",\"{string.Empty}\"");
+                        outpuFile.WriteLine($"\"{Path.GetFileName(dir)}\",\"{string.Empty}\",\"{string.Empty}\",\"{string.Empty}\"");
                         outpuFile.Flush();
                     }
                 }
